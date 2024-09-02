@@ -28,6 +28,7 @@ on:
         type: string
         required: true
         default: "34a8cffa541c94af8232fe9af7a1f5ba"
+
 #  push:
 #    tags:
 #      - "v*.*.*"
@@ -46,8 +47,15 @@ jobs:
             vermagic: ${{ inputs.openwrt_vermagic }}
 
     steps:
-      - uses: actions/checkout@v4
+      - Checkout AmneziaWG-OpenWrt
+        uses: actions/checkout@v4
         with:
+          path: amneziawg-openwrt
+
+      - Checkout OpenWrt
+        uses: actions/checkout@v4
+        with:
+          path: openwrt
           repository: openwrt/openwrt
           ref: v${{ matrix.build_env.tag }}
           fetch-depth: 0
@@ -68,9 +76,13 @@ jobs:
         run: |
           echo "pkgarch: ${{ matrix.build_env.pkgarch}}, target:${{ matrix.build_env.target}}, subtarget: ${{ matrix.build_env.subtarget}}"
 
+          cd openwrt
+
           # Setup & install feeds
-          wget https://downloads.openwrt.org/releases/${{ matrix.build_env.tag }}/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/feeds.buildinfo -O feeds.conf
-          echo "src-git awgopenwrt https://github.com/defanator/amneziawg-openwrt.git" >> ./feeds.conf
+          echo "src-git awgopenwrt ../amneziawg-openwrt^${{ github.sha }}" > feeds.conf
+          curl -fsL https://downloads.openwrt.org/releases/${{ matrix.build_env.tag }}/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/feeds.buildinfo >> feeds.conf
+          echo "    > feeds.conf:"
+          cat feeds.conf
           ./scripts/feeds update
           ./scripts/feeds install -a
 
@@ -138,6 +150,6 @@ jobs:
           cp bin/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/packages/kmod-amneziawg_*.ipk awgrelease/kmod-amneziawg_${postfix}.ipk
 
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: awgrelease/*.ipk
