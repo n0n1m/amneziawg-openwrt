@@ -47,12 +47,12 @@ jobs:
             vermagic: ${{ inputs.openwrt_vermagic }}
 
     steps:
-      - Checkout AmneziaWG-OpenWrt
+      - name: Checkout AmneziaWG-OpenWrt
         uses: actions/checkout@v4
         with:
           path: amneziawg-openwrt
 
-      - Checkout OpenWrt
+      - name: Checkout OpenWrt
         uses: actions/checkout@v4
         with:
           path: openwrt
