@@ -108,8 +108,9 @@ jobs:
           make target/linux/compile  -i -j `nproc` V=s
 
           VERMAGIC=`cat ./build_dir/target-${{ matrix.build_env.pkgarch}}*/linux-${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}/linux-*/.vermagic`
-          VERMAGIC_EXPECTED=${{ matrix.build_env.vermagic }}
+          echo "Vermagic: $VERMAGIC"
 
+          VERMAGIC_EXPECTED=${{ matrix.build_env.vermagic }}
           if [ "$VERMAGIC" != "$VERMAGIC_EXPECTED" ]; then
             echo Vermagic mismatch: $VERMAGIC, expected $VERMAGIC_EXPECTED
             exit 1
@@ -117,11 +118,12 @@ jobs:
 
       - name: Build AmneziaWG
         run: |
-          VERMAGIC=`cat ./build_dir/target-*/linux-*/linux-*/.vermagic`
+          cd openwrt
+
+          VERMAGIC=`cat ./build_dir/target-${{ matrix.build_env.pkgarch}}*/linux-${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}/linux-*/.vermagic`
           echo "Vermagic: $VERMAGIC"
 
           VERMAGIC_EXPECTED=${{ matrix.build_env.vermagic }}
-
           if [ "$VERMAGIC" != "$VERMAGIC_EXPECTED" ]; then
             echo Vermagic mismatch: $VERMAGIC, expected $VERMAGIC_EXPECTED
             exit 1
