@@ -86,9 +86,9 @@ jobs:
           ##echo "CONFIG_PACKAGE_kmod-amneziawg=m" >> .config
           ##echo "CONFIG_PACKAGE_amneziawg-tools=y" >> .config
           ##echo "CONFIG_PACKAGE_luci-proto-amneziawg=y" >> .config
-          #echo "CONFIG_PACKAGE_kmod-crypto-lib-chacha20=m" >> .config
-          #echo "CONFIG_PACKAGE_kmod-crypto-lib-chacha20poly1305=m" >> .config
-          #echo "CONFIG_PACKAGE_kmod-crypto-chacha20poly1305=m" >> .config
+          echo "CONFIG_PACKAGE_kmod-crypto-lib-chacha20=m" >> .config
+          echo "CONFIG_PACKAGE_kmod-crypto-lib-chacha20poly1305=m" >> .config
+          echo "CONFIG_PACKAGE_kmod-crypto-chacha20poly1305=m" >> .config
 
           make defconfig
 
@@ -99,8 +99,8 @@ jobs:
           make toolchain/install  -i -j `nproc`
 
           # compile kernel module
-          #echo "    > make target/linux/compile"
-          #make target/linux/compile  -i -j `nproc` V=s
+          echo "    > make target/linux/compile"
+          make target/linux/compile  -i -j `nproc` V=s
 
           VERMAGIC=`cat ./build_dir/target-${{ matrix.build_env.pkgarch}}*/linux-${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}/linux-*/.vermagic`
           echo "Vermagic: $VERMAGIC"
@@ -118,5 +118,15 @@ jobs:
         env:
           cache-name: "cache-tools-kernel-${{ matrix.build_env.pkgarch}}-${{ matrix.build_env.target}}-${{ matrix.build_env.subtarget}}"
         with:
-          path: "openwrt/**"
+          path: |
+            openwrt/.config
+            openwrt/.config.old
+            openwrt/feeds.conf
+            openwrt/bin/**
+            openwrt/build_dir/**
+            openwrt/dl/**
+            openwrt/feeds/**
+            openwrt/package/**
+            openwrt/staging_dir/**
+            openwrt/tmp/**
           key: ${{ runner.os }}-openwrt-${{ env.cache-name }}
