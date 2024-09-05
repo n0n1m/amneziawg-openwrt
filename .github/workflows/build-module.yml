@@ -79,18 +79,18 @@ jobs:
           cd openwrt
 
           # Setup & install feeds
-          echo "src-git awgopenwrt ../amneziawg-openwrt^${{ github.sha }}" > feeds.conf
-          curl -fsL https://downloads.openwrt.org/releases/${{ matrix.build_env.tag }}/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/feeds.buildinfo >> feeds.conf
+          #echo "src-git awgopenwrt ../amneziawg-openwrt^${{ github.sha }}" > feeds.conf
+          curl -fsL https://downloads.openwrt.org/releases/${{ matrix.build_env.tag }}/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/feeds.buildinfo > feeds.conf
           echo "    > feeds.conf:"
           cat feeds.conf
           ./scripts/feeds update
           ./scripts/feeds install -a
 
           # Setup config with AWG and dependencies
-          wget https://downloads.openwrt.org/releases/${{ matrix.build_env.tag }}/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/config.buildinfo -O .config
-          echo "CONFIG_PACKAGE_kmod-amneziawg=m" >> .config
-          echo "CONFIG_PACKAGE_amneziawg-tools=y" >> .config
-          echo "CONFIG_PACKAGE_luci-proto-amneziawg=y" >> .config
+          curl -fsL https://downloads.openwrt.org/releases/${{ matrix.build_env.tag }}/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/config.buildinfo > .config
+          #echo "CONFIG_PACKAGE_kmod-amneziawg=m" >> .config
+          #echo "CONFIG_PACKAGE_amneziawg-tools=y" >> .config
+          #echo "CONFIG_PACKAGE_luci-proto-amneziawg=y" >> .config
           echo "CONFIG_PACKAGE_kmod-crypto-lib-chacha20=m" >> .config
           echo "CONFIG_PACKAGE_kmod-crypto-lib-chacha20poly1305=m" >> .config
           echo "CONFIG_PACKAGE_kmod-crypto-chacha20poly1305=m" >> .config
@@ -112,7 +112,7 @@ jobs:
 
           VERMAGIC_EXPECTED=${{ matrix.build_env.vermagic }}
           if [ "$VERMAGIC" != "$VERMAGIC_EXPECTED" ]; then
-            echo Vermagic mismatch: $VERMAGIC, expected $VERMAGIC_EXPECTED
+            echo "Vermagic mismatch: $VERMAGIC, expected $VERMAGIC_EXPECTED"
             exit 1
           fi
 
@@ -134,9 +134,20 @@ jobs:
 
           VERMAGIC_EXPECTED=${{ matrix.build_env.vermagic }}
           if [ "$VERMAGIC" != "$VERMAGIC_EXPECTED" ]; then
-            echo Vermagic mismatch: $VERMAGIC, expected $VERMAGIC_EXPECTED
+            echo "Vermagic mismatch: $VERMAGIC, expected $VERMAGIC_EXPECTED"
             exit 1
           fi
+
+          echo "src-git awgopenwrt ../amneziawg-openwrt^${{ github.sha }}" >> feeds.conf
+          echo "    > feeds.conf:"
+          cat feeds.conf
+          ./scripts/feeds update
+          ./scripts/feeds install -a
+
+          echo "CONFIG_PACKAGE_kmod-amneziawg=m" >> .config
+          echo "CONFIG_PACKAGE_amneziawg-tools=y" >> .config
+          echo "CONFIG_PACKAGE_luci-proto-amneziawg=y" >> .config
+          make defconfig
 
           make package/kmod-amneziawg/{clean,download,prepare} V=s
           make package/kmod-amneziawg/compile V=s
