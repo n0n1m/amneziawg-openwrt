@@ -60,6 +60,7 @@ jobs:
           fetch-depth: 0
 
       - name: populate extra env
+        id: extra-env
         run: |
           cd amneziawg-openwrt
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
@@ -122,7 +123,7 @@ jobs:
       - name: prepare artifacts
         run: |
           mkdir -p awgrelease
-          postfix="${ref_name}-${sha_short}_v${{ matrix.build_env.tag }}_${{ matrix.build_env.pkgarch}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}"
+          postfix="${ref_name}-${{ steps.extra-env.outputs.sha_short }}_v${{ matrix.build_env.tag }}_${{ matrix.build_env.pkgarch}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}"
           cp openwrt/bin/packages/${{ matrix.build_env.pkgarch }}/awgopenwrt/amneziawg-tools_*.ipk awgrelease/amneziawg-tools_${postfix}.ipk
           cp openwrt/bin/packages/${{ matrix.build_env.pkgarch }}/awgopenwrt/luci-proto-amneziawg_*.ipk awgrelease/luci-proto-amneziawg_${postfix}.ipk
           cp openwrt/bin/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/packages/kmod-amneziawg_*.ipk awgrelease/kmod-amneziawg_${postfix}.ipk
@@ -130,5 +131,5 @@ jobs:
       - name: upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: amneziawg-${{ env.ref_name }}-${{ env.sha_short }}_v${{ matrix.build_env.tag }}_${{ matrix.build_env.pkgarch}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}
+          name: amneziawg-${{ env.ref_name }}-${{ steps.extra-env.outputs.sha_short }}_v${{ matrix.build_env.tag }}_${{ matrix.build_env.pkgarch}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}
           path: awgrelease/*
