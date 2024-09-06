@@ -62,7 +62,17 @@ jobs:
         env:
           cache-name: "cache-tools-kernel-${{ matrix.build_env.pkgarch}}-${{ matrix.build_env.target}}-${{ matrix.build_env.subtarget}}"
         with:
-          path: "openwrt/**"
+          path: |
+            openwrt/.config
+            openwrt/.config.old
+            openwrt/feeds.conf
+            openwrt/bin/**
+            openwrt/build_dir/**
+            openwrt/dl/**
+            openwrt/feeds/**
+            openwrt/package/**
+            openwrt/staging_dir/**
+            openwrt/tmp/**
           key: ${{ runner.os }}-openwrt-${{ env.cache-name }}
           restore-keys: |
             ${{ runner.os }}-openwrt-cache-tools-kernel-${{ matrix.build_env.pkgarch}}-
