@@ -43,12 +43,7 @@ jobs:
             vermagic: ${{ inputs.openwrt_vermagic }}
 
     steps:
-#      - name: Checkout AmneziaWG-OpenWrt
-#        uses: actions/checkout@v4
-#        with:
-#          path: amneziawg-openwrt
-
-      - name: Checkout OpenWrt
+      - name: checkout openwrt
         uses: actions/checkout@v4
         with:
           path: openwrt
@@ -56,49 +51,33 @@ jobs:
           ref: v${{ matrix.build_env.tag }}
           fetch-depth: 0
 
-#      - name: Restore cached Tools and Kernel
-#        id: cache-tools-kernel-restore
-#        uses: actions/cache/restore@v4
-#        env:
-#          cache-name: "cache-tools-kernel-${{ matrix.build_env.pkgarch}}-${{ matrix.build_env.target}}-${{ matrix.build_env.subtarget}}"
-#        with:
-#          path: "openwrt/**"
-#          key: ${{ runner.os }}-openwrt-${{ env.cache-name }}
-#          restore-keys: |
-#            ${{ runner.os }}-openwrt-cache-tools-kernel-${{ matrix.build_env.pkgarch}}-
-
-      - name: Building kernel and tools
+      - name: building toolchain and kernel
         run: |
           echo "pkgarch: ${{ matrix.build_env.pkgarch}}, target:${{ matrix.build_env.target}}, subtarget: ${{ matrix.build_env.subtarget}}"
 
           cd openwrt
 
-          # Setup & install feeds
-          #echo "src-git awgopenwrt ../amneziawg-openwrt^${{ github.sha }}" > feeds.conf
+          # setup & install feeds
           curl -fsL https://downloads.openwrt.org/releases/${{ matrix.build_env.tag }}/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/feeds.buildinfo > feeds.conf
           echo "    > feeds.conf:"
           cat feeds.conf
           ./scripts/feeds update
           ./scripts/feeds install -a
 
-          # Setup config with AWG and dependencies
+          # setup kernel config with amneziawg dependencies
           curl -fsL https://downloads.openwrt.org/releases/${{ matrix.build_env.tag }}/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/config.buildinfo > .config
-          ##echo "CONFIG_PACKAGE_kmod-amneziawg=m" >> .config
-          ##echo "CONFIG_PACKAGE_amneziawg-tools=y" >> .config
-          ##echo "CONFIG_PACKAGE_luci-proto-amneziawg=y" >> .config
           echo "CONFIG_PACKAGE_kmod-crypto-lib-chacha20=m" >> .config
           echo "CONFIG_PACKAGE_kmod-crypto-lib-chacha20poly1305=m" >> .config
           echo "CONFIG_PACKAGE_kmod-crypto-chacha20poly1305=m" >> .config
-
           make defconfig
 
+          # build toolchain
           echo "    > make tools/install"
           make tools/install -i -j `nproc`
-
           echo "    > make toolchain/install"
           make toolchain/install  -i -j `nproc`
 
-          # compile kernel module
+          # build kernel
           echo "    > make target/linux/compile"
           make target/linux/compile  -i -j `nproc` V=s
 
@@ -111,12 +90,9 @@ jobs:
             exit 1
           fi
 
-      - name: Save Tools and Kernel
-        #if: ${{ steps.cache-tools-kernel-restore.outputs.cache-hit != 'true' }}
+      - name: save toolchain and kernel cache
         id: cache-tools-kernel-save
         uses: actions/cache/save@v4
-        env:
-          cache-name: "cache-tools-kernel-${{ matrix.build_env.pkgarch}}-${{ matrix.build_env.target}}-${{ matrix.build_env.subtarget}}"
         with:
           path: |
             openwrt/.config
@@ -129,4 +105,4 @@ jobs:
             openwrt/package/**
             openwrt/staging_dir/**
             openwrt/tmp/**
-          key: ${{ runner.os }}-openwrt-${{ env.cache-name }}
+          key: ${{ runner.os }}-openwrt-cache-toolchain-kernel-${{ matrix.build_env.tag }}-${{ matrix.build_env.pkgarch}}-${{ matrix.build_env.target}}-${{ matrix.build_env.subtarget}}
