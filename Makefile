@@ -40,13 +40,6 @@ endif
 help: ## Show help message (list targets)
 	@awk 'BEGIN {FS = ":.*##"; printf "\nTargets:\n"} /^[$$()% 0-9a-zA-Z_-]+:.*?##/ {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' $(SELF)
 
-show-var-%:
-	@{ \
-	escaped_v="$(subst ",\",$($*))" ; \
-	if [ -n "$$escaped_v" ]; then v="$$escaped_v"; else v="(undefined)"; fi; \
-	printf "%-21s %s\n" "$*" "$$v"; \
-	}
-
 SHOW_ENV_VARS = \
 	SELF \
 	TOPDIR \
@@ -66,7 +59,23 @@ SHOW_ENV_VARS = \
 	OPENWRT_BASE_URL \
 	OPENWRT_MANIFEST
 
+show-var-%:
+	@{ \
+	escaped_v="$(subst ",\",$($*))" ; \
+	if [ -n "$$escaped_v" ]; then v="$$escaped_v"; else v="(undefined)"; fi; \
+	printf "%-21s %s\n" "$*" "$$v"; \
+	}
+
 show-env: $(addprefix show-var-, $(SHOW_ENV_VARS)) ## Show environment details
+
+export-var-%:
+	@{ \
+	escaped_v="$(subst ",\",$($*))" ; \
+	if [ -n "$$escaped_v" ]; then v="$$escaped_v"; else v="(undefined)"; fi; \
+	printf "%s=%s\n" "$*" "$$v"; \
+	}
+
+export-env: $(addprefix export-var-, $(SHOW_ENV_VARS)) ## Export environment
 
 .PHONY: build-amneziawg
 build-amneziawg: ## Build amneziawg-openwrt kernel module and packages

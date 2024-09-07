@@ -84,14 +84,16 @@ jobs:
             ${{ runner.os }}-openwrt-cache-tools-kernel-${{ matrix.build_env.pkgarch}}-
 
       - name: build amneziawg
+        id: build-amneziawg
         run: |
           set -x
           cd amneziawg-openwrt
           make show-env
+          make export-env >> $GITHUB_OUTPUT
           make build-amneziawg
 
       - name: upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: amneziawg-${{ github.ref_name }}-${{ steps.extra-env.outputs.sha_short }}_v${{ matrix.build_env.tag }}_${{ matrix.build_env.pkgarch}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}
+          name: amneziawg-${{ steps.build-amneziawg.outputs.version_str }}_v${{ matrix.build_env.tag }}_${{ matrix.build_env.pkgarch}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}
           path: awgrelease/*
