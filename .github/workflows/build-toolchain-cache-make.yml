@@ -50,6 +50,12 @@ jobs:
       OPENWRT_VERMAGIC: ${{ matrix.build_env.vermagic }}
 
     steps:
+      - name: checkout amneziawg-openwrt
+        uses: actions/checkout@v4
+        with:
+          path: amneziawg-openwrt
+          fetch-depth: 0
+
       - name: checkout openwrt
         uses: actions/checkout@v4
         with:
