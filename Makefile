@@ -87,14 +87,20 @@ build-amneziawg: ## Build amneziawg-openwrt kernel module and packages
 	echo "CONFIG_PACKAGE_amneziawg-tools=y" >> .config ; \
 	echo "CONFIG_PACKAGE_luci-proto-amneziawg=y" >> .config ; \
 	make defconfig ; \
-	make package/kmod-amneziawg/{clean,download,prepare} V=s ; \
-	make package/kmod-amneziawg/compile V=s ; \
-	make package/luci-proto-amneziawg/{clean,download,prepare} ; \
-	make package/luci-proto-amneziawg/compile V=s ; \
-	make V=s package/amneziawg-tools/{clean,download,prepare} ; \
+	make V=s package/kmod-amneziawg/clean ; \
+	make V=s package/kmod-amneziawg/download ; \
+	make V=s package/kmod-amneziawg/prepare ; \
+	make V=s package/kmod-amneziawg/compile ; \
+	make V=s package/luci-proto-amneziawg/clean ; \
+	make V=s package/luci-proto-amneziawg/download ; \
+	make V=s package/luci-proto-amneziawg/prepare ; \
+	make V=s package/luci-proto-amneziawg/compile ; \
+	make V=s package/amneziawg-tools/clean ; \
+	make V=s package/amneziawg-tools/download ; \
+	make V=s package/amneziawg-tools/prepare ; \
 	make V=s package/amneziawg-tools/compile ; \
 	mkdir -p $(AMNEZIAWG_DSTDIR) ; \
-	cp $(OPENWRT_SRCDIR)/bin/packages/$(OPENWRT_ARCH)/awgopenwrt/amneziawg-tools_*.ipk $(AMNEZIAWG_DSTDIR)/amneziawg-tools_$(POSTFIX).ipk ; \
-	cp $(OPENWRT_SRCDIR)/bin/packages/$(OPENWRT_ARCH)/awgopenwrt/luci-proto-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/luci-proto-amneziawg_$(POSTFIX).ipk ; \
-	cp $(OPENWRT_SRCDIR)/bin/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/kmod-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/kmod-amneziawg_$(POSTFIX).ipk ; \
+	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/amneziawg-tools_*.ipk $(AMNEZIAWG_DSTDIR)/amneziawg-tools_$(POSTFIX).ipk ; \
+	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/luci-proto-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/luci-proto-amneziawg_$(POSTFIX).ipk ; \
+	cp bin/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/kmod-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/kmod-amneziawg_$(POSTFIX).ipk ; \
 	}

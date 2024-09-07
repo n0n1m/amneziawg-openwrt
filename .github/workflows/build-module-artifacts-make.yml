@@ -85,6 +85,7 @@ jobs:
 
       - name: build amneziawg
         run: |
+          set -x
           cd amneziawg-openwrt
           make show-env
           make build-amneziawg
