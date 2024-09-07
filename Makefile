@@ -78,13 +78,27 @@ export-var-%:
 
 export-env: $(addprefix export-var-, $(SHOW_ENV_VARS)) ## Export environment
 
-$(OPENWRT_SRCDIR)/feeds.conf:
+$(OPENWRT_SRCDIR):
+	@{ \
+	set -ex ; \
+	git clone https://github.com/openwrt/openwrt.git $@ ; \
+	}
+
+.PHONY: fetch-openwrt
+fetch-openwrt: | $(OPENWRT_SRCDIR) ## Clone OpenWrt sources of a given release
+	@{ \
+	set -ex ; \
+	cd $(OPENWRT_SRCDIR) ; \
+	git checkout v$(OPENWRT_RELEASE) ; \
+	}
+
+$(OPENWRT_SRCDIR)/feeds.conf: fetch-openwrt
 	@{ \
 	set -ex ; \
 	curl -fsL $(OPENWRT_BASE_URL)/feeds.buildinfo | tee $@ ; \
 	}
 
-$(OPENWRT_SRCDIR)/.config:
+$(OPENWRT_SRCDIR)/.config: fetch-openwrt
 	@{ \
 	set -ex ; \
 	curl -fsL $(OPENWRT_BASE_URL)/config.buildinfo > $@ ; \
@@ -106,7 +120,7 @@ build-toolchain: $(OPENWRT_SRCDIR)/feeds.conf $(OPENWRT_SRCDIR)/.config ## Build
 	}
 
 .PHONY: build-kernel
-build-kernel: ## Build OpenWrt kernel
+build-kernel: $(OPENWRT_SRCDIR)/feeds.conf $(OPENWRT_SRCDIR)/.config ## Build OpenWrt kernel
 	@{ \
 	set -ex ; \
 	cd $(OPENWRT_SRCDIR) ; \
