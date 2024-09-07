@@ -1,4 +1,4 @@
-name: build toolchain cache
+name: build toolchain cache (make)
 
 on:
   workflow_dispatch:
@@ -27,11 +27,11 @@ on:
         description: "OpenWrt vermagic"
         type: string
         required: true
-        default: "34a8cffa541c94af8232fe9af7a1f5ba"
+        default: "auto"
 
 jobs:
   build:
-    name: "v${{ matrix.build_env.tag }} - ${{ matrix.build_env.pkgarch}} :: ${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}} build"
+    name: "v${{ matrix.build_env.tag }} - ${{ matrix.build_env.pkgarch }} :: ${{ matrix.build_env.target }}/${{ matrix.build_env.subtarget }} openwrt build"
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -41,6 +41,13 @@ jobs:
             target: ${{ inputs.openwrt_target }}
             subtarget: ${{ inputs.openwrt_subtarget }}
             vermagic: ${{ inputs.openwrt_vermagic }}
+
+    env:
+      OPENWRT_RELEASE: ${{ matrix.build_env.tag }}
+      OPENWRT_ARCH: ${{ matrix.build_env.pkgarch }}
+      OPENWRT_TARGET: ${{ matrix.build_env.target }}
+      OPENWRT_SUBTARGET: ${{ matrix.build_env.subtarget }}
+      OPENWRT_VERMAGIC: ${{ matrix.build_env.vermagic }}
 
     steps:
       - name: checkout openwrt
@@ -52,43 +59,15 @@ jobs:
           fetch-depth: 0
 
       - name: building toolchain and kernel
+        id: build-toolchain-kernel
         run: |
           echo "pkgarch: ${{ matrix.build_env.pkgarch }}, target: ${{ matrix.build_env.target }}, subtarget: ${{ matrix.build_env.subtarget }}"
-
-          cd openwrt
-
-          # setup & install feeds
-          curl -fsL https://downloads.openwrt.org/releases/${{ matrix.build_env.tag }}/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/feeds.buildinfo > feeds.conf
-          echo "    > feeds.conf:"
-          cat feeds.conf
-          ./scripts/feeds update
-          ./scripts/feeds install -a
-
-          # setup kernel config with amneziawg dependencies
-          curl -fsL https://downloads.openwrt.org/releases/${{ matrix.build_env.tag }}/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/config.buildinfo > .config
-          echo "CONFIG_PACKAGE_kmod-crypto-lib-chacha20=m" >> .config
-          echo "CONFIG_PACKAGE_kmod-crypto-lib-chacha20poly1305=m" >> .config
-          echo "CONFIG_PACKAGE_kmod-crypto-chacha20poly1305=m" >> .config
-          make defconfig
-
-          # build toolchain
-          echo "    > make tools/install"
-          make tools/install -i -j `nproc`
-          echo "    > make toolchain/install"
-          make toolchain/install  -i -j `nproc`
-
-          # build kernel
-          echo "    > make target/linux/compile"
-          make target/linux/compile  -i -j `nproc` V=s
-
-          VERMAGIC=`cat ./build_dir/target-${{ matrix.build_env.pkgarch}}*/linux-${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}/linux-*/.vermagic`
-          echo "Vermagic: $VERMAGIC"
-
-          VERMAGIC_EXPECTED=${{ matrix.build_env.vermagic }}
-          if [ "$VERMAGIC" != "$VERMAGIC_EXPECTED" ]; then
-            echo "Vermagic mismatch: $VERMAGIC, expected $VERMAGIC_EXPECTED"
-            exit 1
-          fi
+          set -x
+          cd amneziawg-openwrt
+          make show-env
+          make export-env >> $GITHUB_OUTPUT
+          make build-toolchain
+          make build-kernel
 
       - name: save toolchain and kernel cache
         id: cache-tools-kernel-save

@@ -68,6 +68,9 @@ jobs:
         id: cache-tools-kernel-restore
         uses: actions/cache/restore@v4
         with:
+          key: ${{ runner.os }}-openwrt-cache-toolchain-kernel-${{ matrix.build_env.tag }}-${{ matrix.build_env.pkgarch }}-${{ matrix.build_env.target }}-${{ matrix.build_env.subtarget }}
+          restore-keys: |
+            ${{ runner.os }}-openwrt-cache-tools-kernel-${{ matrix.build_env.pkgarch }}-
           path: |
             openwrt/.config
             openwrt/.config.old
@@ -79,9 +82,6 @@ jobs:
             openwrt/package/**
             openwrt/staging_dir/**
             openwrt/tmp/**
-          key: ${{ runner.os }}-openwrt-cache-toolchain-kernel-${{ matrix.build_env.tag }}-${{ matrix.build_env.pkgarch}}-${{ matrix.build_env.target}}-${{ matrix.build_env.subtarget}}
-          restore-keys: |
-            ${{ runner.os }}-openwrt-cache-tools-kernel-${{ matrix.build_env.pkgarch}}-
 
       - name: build amneziawg
         id: build-amneziawg

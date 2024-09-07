@@ -41,6 +41,7 @@ help: ## Show help message (list targets)
 	@awk 'BEGIN {FS = ":.*##"; printf "\nTargets:\n"} /^[$$()% 0-9a-zA-Z_-]+:.*?##/ {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' $(SELF)
 
 SHOW_ENV_VARS = \
+	SHELL \
 	SELF \
 	TOPDIR \
 	UPPERDIR \
@@ -77,6 +78,47 @@ export-var-%:
 
 export-env: $(addprefix export-var-, $(SHOW_ENV_VARS)) ## Export environment
 
+$(OPENWRT_SRCDIR)/feeds.conf:
+	@{ \
+	set -ex ; \
+	curl -fsL $(OPENWRT_BASE_URL)/feeds.buildinfo | tee $@ ; \
+	}
+
+$(OPENWRT_SRCDIR)/.config:
+	@{ \
+	set -ex ; \
+	curl -fsL $(OPENWRT_BASE_URL)/config.buildinfo > $@ ; \
+	echo "CONFIG_PACKAGE_kmod-crypto-lib-chacha20=m" >> $@ ; \
+	echo "CONFIG_PACKAGE_kmod-crypto-lib-chacha20poly1305=m" >> $@ ; \
+	echo "CONFIG_PACKAGE_kmod-crypto-chacha20poly1305=m" >> $@ ; \
+	}
+
+.PHONY: build-toolchain
+build-toolchain: $(OPENWRT_SRCDIR)/feeds.conf $(OPENWRT_SRCDIR)/.config ## Build OpenWrt toolchain
+	@{ \
+	set -ex ; \
+	cd $(OPENWRT_SRCDIR) ; \
+	time -p ./scripts/feeds update ; \
+	time -p ./scripts/feeds install -a ; \
+	time -p make defconfig ; \
+	time -p make tools/install -i -j $(NPROC) ; \
+	time -p make toolchain/install -i -j $(NPROC) ; \
+	}
+
+.PHONY: build-kernel
+build-kernel: ## Build OpenWrt kernel
+	@{ \
+	set -ex ; \
+	cd $(OPENWRT_SRCDIR) ; \
+	time -p make V=s target/linux/compile -i -j $(NPROC) ; \
+	VERMAGIC=$$(cat ./build_dir/target-$(OPENWRT_ARCH)*/linux-$(OPENWRT_TARGET)_$(OPENWRT_SUBTARGET)/linux-*/.vermagic) ; \
+	echo "Vermagic: $${VERMAGIC}" ; \
+	if [ "$${VERMAGIC}" != "$(OPENWRT_VERMAGIC)" ]; then \
+		echo "Vermagic mismatch: $${VERMAGIC}, expected $(OPENWRT_VERMAGIC)" ; \
+		exit 1 ; \
+	fi ; \
+	}
+
 .PHONY: build-amneziawg
 build-amneziawg: ## Build amneziawg-openwrt kernel module and packages
 	@{ \
@@ -85,7 +127,7 @@ build-amneziawg: ## Build amneziawg-openwrt kernel module and packages
 	VERMAGIC=$$(cat ./build_dir/target-$(OPENWRT_ARCH)*/linux-$(OPENWRT_TARGET)_$(OPENWRT_SUBTARGET)/linux-*/.vermagic) ; \
 	echo "Vermagic: $${VERMAGIC}" ; \
 	if [ "$${VERMAGIC}" != "$(OPENWRT_VERMAGIC)" ]; then \
-		echo "Vermagic mismatch: $VERMAGIC, expected $VERMAGIC_EXPECTED" ; \
+		echo "Vermagic mismatch: $${VERMAGIC}, expected $(OPENWRT_VERMAGIC)" ; \
 		exit 1 ; \
 	fi ; \
 	echo "src-git awgopenwrt $(AMNEZIAWG_SRCDIR)^$(GITHUB_SHA)" > feeds.conf ; \
