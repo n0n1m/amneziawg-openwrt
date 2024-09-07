@@ -1,4 +1,4 @@
-name: build module artifacts
+name: create release
 
 on:
   workflow_dispatch:
