@@ -19,6 +19,8 @@ GITHUB_SHA        ?= $(shell git rev-parse --short HEAD)
 VERSION_STR       ?= $(shell git describe --tags --long --dirty)
 POSTFIX           := $(VERSION_STR)_v$(OPENWRT_RELEASE)_$(OPENWRT_ARCH)_$(OPENWRT_TARGET)_$(OPENWRT_SUBTARGET)
 
+WORKFLOW_REF      ?= $(shell git rev-parse --abbrev-ref HEAD)
+
 OPENWRT_ROOT_URL  ?= https://downloads.openwrt.org/releases
 OPENWRT_BASE_URL  ?= $(OPENWRT_ROOT_URL)/$(OPENWRT_RELEASE)/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)
 OPENWRT_MANIFEST  ?= $(OPENWRT_BASE_URL)/openwrt-$(OPENWRT_RELEASE)-$(OPENWRT_TARGET)-$(OPENWRT_SUBTARGET).manifest
@@ -38,7 +40,7 @@ OPENWRT_VERMAGIC := $(shell curl -fs $(OPENWRT_MANIFEST) | grep -- "^kernel" | s
 endif
 
 help: ## Show help message (list targets)
-	@awk 'BEGIN {FS = ":.*##"; printf "\nTargets:\n"} /^[$$()% 0-9a-zA-Z_-]+:.*?##/ {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' $(SELF)
+	@awk 'BEGIN {FS = ":.*##"; printf "\nTargets:\n"} /^[$$()% 0-9a-zA-Z_-]+:.*?##/ {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}' $(SELF)
 
 SHOW_ENV_VARS = \
 	SHELL \
@@ -52,6 +54,7 @@ SHOW_ENV_VARS = \
 	VERSION_STR \
 	POSTFIX \
 	NPROC \
+	WORKFLOW_REF \
 	OPENWRT_RELEASE \
 	OPENWRT_ARCH \
 	OPENWRT_TARGET \
@@ -77,6 +80,32 @@ export-var-%:
 	}
 
 export-env: $(addprefix export-var-, $(SHOW_ENV_VARS)) ## Export environment
+
+.PHONY: github-build-cache
+github-build-cache: ## Run GitHub workflow to create OpenWrt toolchain and kernel cache (use WORKFLOW_REF to specify branch/tag)
+	@{ \
+	set -ex ; \
+	gh workflow run build-toolchain-cache.yml \
+		--ref $(WORKFLOW_REF) \
+		-f openwrt_version=$(OPENWRT_RELEASE) \
+		-f openwrt_arch=$(OPENWRT_ARCH) \
+		-f openwrt_target=$(OPENWRT_TARGET) \
+		-f openwrt_subtarget=$(OPENWRT_SUBTARGET) \
+		-f openwrt_vermagic=$(OPENWRT_VERMAGIC) ; \
+	}
+
+.PHONY: github-build-artifacts
+github-build-artifacts: ## Run GitHub workflow to build amneziawg OpenWrt packages (use WORKFLOW_REF to specify branch/tag)
+	@{ \
+	set -ex ; \
+	gh workflow run build-module-artifacts.yml \
+		--ref $(WORKFLOW_REF) \
+		-f openwrt_version=$(OPENWRT_RELEASE) \
+		-f openwrt_arch=$(OPENWRT_ARCH) \
+		-f openwrt_target=$(OPENWRT_TARGET) \
+		-f openwrt_subtarget=$(OPENWRT_SUBTARGET) \
+		-f openwrt_vermagic=$(OPENWRT_VERMAGIC) ; \
+	}
 
 $(OPENWRT_SRCDIR):
 	@{ \
