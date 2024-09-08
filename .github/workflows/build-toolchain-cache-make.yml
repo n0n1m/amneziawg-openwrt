@@ -67,11 +67,9 @@ jobs:
       - name: building toolchain and kernel
         id: build-toolchain-kernel
         run: |
-          echo "pkgarch: ${{ matrix.build_env.pkgarch }}, target: ${{ matrix.build_env.target }}, subtarget: ${{ matrix.build_env.subtarget }}"
           set -x
           cd amneziawg-openwrt
           make show-env
-          make export-env >> $GITHUB_OUTPUT
           time -p make build-toolchain
           time -p make build-kernel
           make purge-circular-symlinks
