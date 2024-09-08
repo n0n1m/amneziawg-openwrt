@@ -225,7 +225,7 @@ check-release: ## Verify that everything is in place for tagged release
 	set -eux ; \
 	echo "checking for release" ; \
 	if [ "$${GITHUB_REF_TYPE}" != "tag" ]; then \
-		echo "ERROR: unsupported GITHUB_REF_TYPE: $${GITHUB_REF_TYPE}" >&2 ; \
+		echo "ERROR: unsupported GITHUB_REF_TYPE: $${GITHUB_REF_TYPE}" ; \
 		exit 1 ; \
 	fi ; \
 	if ! grep -q -E '^v[0-9]+(\.[0-9]+){2}$$' <<< "$${GITHUB_REF_NAME}"; then \
@@ -234,7 +234,7 @@ check-release: ## Verify that everything is in place for tagged release
 	fi ; \
 	num_extra_commits="$$(git rev-list "$${GITHUB_REF_NAME}..HEAD" --count)" ; \
 	if [ "$${num_extra_commits}" -gt 0 ]; then \
-		echo "ERROR: $${num_extra_commits} extra commit(s) detected" >&2 ; \
+		echo "ERROR: $${num_extra_commits} extra commit(s) detected" ; \
 		exit 1 ; \
 	fi ; \
 	}
