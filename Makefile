@@ -18,6 +18,7 @@ OPENWRT_VERMAGIC  ?= auto
 GITHUB_SHA        ?= $(shell git rev-parse --short HEAD)
 VERSION_STR       ?= $(shell git describe --tags --long --dirty)
 POSTFIX           := $(VERSION_STR)_v$(OPENWRT_RELEASE)_$(OPENWRT_ARCH)_$(OPENWRT_TARGET)_$(OPENWRT_SUBTARGET)
+POSTFIX_RELEASE   := $(GITHUB_REF_NAME)_v$(OPENWRT_RELEASE)_$(OPENWRT_ARCH)_$(OPENWRT_TARGET)_$(OPENWRT_SUBTARGET)
 
 WORKFLOW_REF      ?= $(shell git rev-parse --abbrev-ref HEAD)
 
@@ -53,7 +54,8 @@ SHOW_ENV_VARS = \
 	GITHUB_SHA \
 	VERSION_STR \
 	POSTFIX \
-	NPROC \
+	GITHUB_REF_TYPE \
+	GITHUB_REF_NAME \
 	WORKFLOW_REF \
 	OPENWRT_RELEASE \
 	OPENWRT_ARCH \
@@ -61,7 +63,8 @@ SHOW_ENV_VARS = \
 	OPENWRT_SUBTARGET \
 	OPENWRT_VERMAGIC \
 	OPENWRT_BASE_URL \
-	OPENWRT_MANIFEST
+	OPENWRT_MANIFEST \
+	NPROC
 
 show-var-%:
 	@{ \
@@ -203,8 +206,46 @@ build-amneziawg: ## Build amneziawg-openwrt kernel module and packages
 	make V=s package/amneziawg-tools/download ; \
 	make V=s package/amneziawg-tools/prepare ; \
 	make V=s package/amneziawg-tools/compile ; \
+	}
+
+.PHONY: prepare-artifacts
+prepare-artifacts: ## Save amneziawg-openwrt artifacts from regular builds
+	@{ \
+	set -ex ; \
+	cd $(OPENWRT_SRCDIR) ; \
 	mkdir -p $(AMNEZIAWG_DSTDIR) ; \
 	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/amneziawg-tools_*.ipk $(AMNEZIAWG_DSTDIR)/amneziawg-tools_$(POSTFIX).ipk ; \
 	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/luci-proto-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/luci-proto-amneziawg_$(POSTFIX).ipk ; \
 	cp bin/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/kmod-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/kmod-amneziawg_$(POSTFIX).ipk ; \
+	}
+
+.PHONY: check-release
+check-release: ## Verify that everything is in place for tagged release
+	@{ \
+	set -eux ; \
+	echo "checking for release" ; \
+	if [ "$${GITHUB_REF_TYPE}" != "tag" ]; then \
+		echo "ERROR: unsupported GITHUB_REF_TYPE: $${GITHUB_REF_TYPE}" >&2 ; \
+		exit 1 ; \
+	fi ; \
+	if ! grep -q -E '^v[0-9]+(\.[0-9]+){2}$$' <<< "$${GITHUB_REF_NAME}"; then \
+		echo "ERROR: tag $${GITHUB_REF_NAME} is NOT a valid semver" ; \
+		exit 1 ; \
+	fi ; \
+	num_extra_commits="$$(git rev-list "$${GITHUB_REF_NAME}..HEAD" --count)" ; \
+	if [ "$${num_extra_commits}" -gt 0 ]; then \
+		echo "ERROR: $${num_extra_commits} extra commit(s) detected" >&2 ; \
+		exit 1 ; \
+	fi ; \
+	}
+
+.PHONY: prepare-release
+prepare-release: check-release ## Save amneziawg-openwrt artifacts from tagged release
+	@{ \
+	set -ex ; \
+	cd $(OPENWRT_SRCDIR) ; \
+	mkdir -p $(AMNEZIAWG_DSTDIR) ; \
+	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/amneziawg-tools_*.ipk $(AMNEZIAWG_DSTDIR)/amneziawg-tools_$(POSTFIX_RELEASE).ipk ; \
+	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/luci-proto-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/luci-proto-amneziawg_$(POSTFIX_RELEASE).ipk ; \
+	cp bin/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/kmod-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/kmod-amneziawg_$(POSTFIX_RELEASE).ipk ; \
 	}

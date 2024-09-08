@@ -56,6 +56,14 @@ jobs:
           path: amneziawg-openwrt
           fetch-depth: 0
 
+      - name: check amneziawg-openwrt release readiness
+        id: check-amneziawg-release
+        run: |
+          set -x
+          cd amneziawg-openwrt
+          make show-env
+          make check-release
+
       - name: checkout openwrt
         uses: actions/checkout@v4
         with:
@@ -91,6 +99,7 @@ jobs:
           cd amneziawg-openwrt
           make show-env
           time -p make build-amneziawg
+          make prepare-release
 
       - name: release
         uses: softprops/action-gh-release@v2
