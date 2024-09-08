@@ -225,16 +225,16 @@ check-release: ## Verify that everything is in place for tagged release
 	set -eux ; \
 	echo "checking for release" ; \
 	if [ "$${GITHUB_REF_TYPE}" != "tag" ]; then \
-		echo "ERROR: unsupported GITHUB_REF_TYPE: $${GITHUB_REF_TYPE}" ; \
+		echo "ERROR: unsupported GITHUB_REF_TYPE: $${GITHUB_REF_TYPE}" >&2 ; \
 		exit 1 ; \
 	fi ; \
-	if ! grep -q -E '^v[0-9]+(\.[0-9]+){2}$$' <<< "$${GITHUB_REF_NAME}"; then \
-		echo "ERROR: tag $${GITHUB_REF_NAME} is NOT a valid semver" ; \
+	if ! echo "$${GITHUB_REF_NAME}" | grep -q -E '^v[0-9]+(\.[0-9]+){2}$$'; then \
+		echo "ERROR: tag $${GITHUB_REF_NAME} is NOT a valid semver" >&2 ; \
 		exit 1 ; \
 	fi ; \
 	num_extra_commits="$$(git rev-list "$${GITHUB_REF_NAME}..HEAD" --count)" ; \
 	if [ "$${num_extra_commits}" -gt 0 ]; then \
-		echo "ERROR: $${num_extra_commits} extra commit(s) detected" ; \
+		echo "ERROR: $${num_extra_commits} extra commit(s) detected" >&2 ; \
 		exit 1 ; \
 	fi ; \
 	}
