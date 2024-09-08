@@ -27,11 +27,11 @@ on:
         description: "OpenWrt vermagic"
         type: string
         required: true
-        default: "34a8cffa541c94af8232fe9af7a1f5ba"
+        default: "auto"
 
 jobs:
   build:
-    name: "v${{ matrix.build_env.tag }} - ${{ matrix.build_env.pkgarch}} :: ${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}} build"
+    name: "v${{ matrix.build_env.tag }} - ${{ matrix.build_env.pkgarch }} :: ${{ matrix.build_env.target }}/${{ matrix.build_env.subtarget }} amneziawg build"
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -42,11 +42,19 @@ jobs:
             subtarget: ${{ inputs.openwrt_subtarget }}
             vermagic: ${{ inputs.openwrt_vermagic }}
 
+    env:
+      OPENWRT_RELEASE: ${{ matrix.build_env.tag }}
+      OPENWRT_ARCH: ${{ matrix.build_env.pkgarch }}
+      OPENWRT_TARGET: ${{ matrix.build_env.target }}
+      OPENWRT_SUBTARGET: ${{ matrix.build_env.subtarget }}
+      OPENWRT_VERMAGIC: ${{ matrix.build_env.vermagic }}
+
     steps:
       - name: checkout amneziawg-openwrt
         uses: actions/checkout@v4
         with:
           path: amneziawg-openwrt
+          fetch-depth: 0
 
       - name: checkout openwrt
         uses: actions/checkout@v4
@@ -56,16 +64,13 @@ jobs:
           ref: v${{ matrix.build_env.tag }}
           fetch-depth: 0
 
-      - name: populate extra env
-        id: extra-env
-        run: |
-          cd amneziawg-openwrt
-          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
       - name: restore cached tools and kernel
         id: cache-tools-kernel-restore
         uses: actions/cache/restore@v4
         with:
+          key: ${{ runner.os }}-openwrt-cache-toolchain-kernel-${{ matrix.build_env.tag }}-${{ matrix.build_env.pkgarch }}-${{ matrix.build_env.target }}-${{ matrix.build_env.subtarget }}
+          restore-keys: |
+            ${{ runner.os }}-openwrt-cache-tools-kernel-${{ matrix.build_env.pkgarch }}-
           path: |
             openwrt/.config
             openwrt/.config.old
@@ -77,54 +82,18 @@ jobs:
             openwrt/package/**
             openwrt/staging_dir/**
             openwrt/tmp/**
-          key: ${{ runner.os }}-openwrt-cache-toolchain-kernel-${{ matrix.build_env.tag }}-${{ matrix.build_env.pkgarch }}-${{ matrix.build_env.target }}-${{ matrix.build_env.subtarget }}
-          restore-keys: |
-            ${{ runner.os }}-openwrt-cache-tools-kernel-${{ matrix.build_env.pkgarch }}-
 
       - name: build amneziawg
+        id: build-amneziawg
         run: |
-          cd openwrt
-
-          VERMAGIC=`cat ./build_dir/target-${{ matrix.build_env.pkgarch}}*/linux-${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}/linux-*/.vermagic`
-          echo "Vermagic: $VERMAGIC"
-
-          VERMAGIC_EXPECTED=${{ matrix.build_env.vermagic }}
-          if [ "$VERMAGIC" != "$VERMAGIC_EXPECTED" ]; then
-            echo "Vermagic mismatch: $VERMAGIC, expected $VERMAGIC_EXPECTED"
-            exit 1
-          fi
-
-          echo "src-git awgopenwrt ../amneziawg-openwrt^${{ github.sha }}" > feeds.conf
-          echo "    > feeds.conf:"
-          cat feeds.conf
-          ./scripts/feeds update
-          ./scripts/feeds install -a
-
-          mv .config.old .config
-          echo "CONFIG_PACKAGE_kmod-amneziawg=m" >> .config
-          echo "CONFIG_PACKAGE_amneziawg-tools=y" >> .config
-          echo "CONFIG_PACKAGE_luci-proto-amneziawg=y" >> .config
-          make defconfig
-
-          make package/kmod-amneziawg/{clean,download,prepare} V=s
-          make package/kmod-amneziawg/compile V=s
-
-          make package/luci-proto-amneziawg/{clean,download,prepare}
-          make package/luci-proto-amneziawg/compile V=s
-
-          make V=s package/amneziawg-tools/{clean,download,prepare}
-          make V=s package/amneziawg-tools/compile
-
-      - name: prepare artifacts
-        run: |
-          mkdir -p awgrelease
-          postfix="${{ github.ref_name }}-${{ steps.extra-env.outputs.sha_short }}_v${{ matrix.build_env.tag }}_${{ matrix.build_env.pkgarch}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}"
-          cp openwrt/bin/packages/${{ matrix.build_env.pkgarch }}/awgopenwrt/amneziawg-tools_*.ipk awgrelease/amneziawg-tools_${postfix}.ipk
-          cp openwrt/bin/packages/${{ matrix.build_env.pkgarch }}/awgopenwrt/luci-proto-amneziawg_*.ipk awgrelease/luci-proto-amneziawg_${postfix}.ipk
-          cp openwrt/bin/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/packages/kmod-amneziawg_*.ipk awgrelease/kmod-amneziawg_${postfix}.ipk
+          set -x
+          cd amneziawg-openwrt
+          make show-env
+          make export-env >> $GITHUB_OUTPUT
+          make build-amneziawg
 
       - name: upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: amneziawg-${{ github.ref_name }}-${{ steps.extra-env.outputs.sha_short }}_v${{ matrix.build_env.tag }}_${{ matrix.build_env.pkgarch}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}
+          name: amneziawg-${{ steps.build-amneziawg.outputs.version_str }}_v${{ matrix.build_env.tag }}_${{ matrix.build_env.pkgarch}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}
           path: awgrelease/*
