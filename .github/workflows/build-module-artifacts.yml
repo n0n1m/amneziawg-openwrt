@@ -90,7 +90,7 @@ jobs:
           cd amneziawg-openwrt
           make show-env
           make export-env >> $GITHUB_OUTPUT
-          make build-amneziawg
+          time -p make build-amneziawg
 
       - name: upload artifacts
         uses: actions/upload-artifact@v4
