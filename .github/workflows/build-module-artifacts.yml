@@ -1,6 +1,8 @@
 name: build module artifacts
 
 on:
+  schedule:
+    - cron: '30 14 * * 1,5'
   workflow_dispatch:
     inputs:
       openwrt_version:
