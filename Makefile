@@ -213,10 +213,12 @@ prepare-artifacts: ## Save amneziawg-openwrt artifacts from regular builds
 	@{ \
 	set -ex ; \
 	cd $(OPENWRT_SRCDIR) ; \
-	mkdir -p $(AMNEZIAWG_DSTDIR) ; \
-	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/amneziawg-tools_*.ipk $(AMNEZIAWG_DSTDIR)/amneziawg-tools_$(POSTFIX).ipk ; \
-	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/luci-proto-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/luci-proto-amneziawg_$(POSTFIX).ipk ; \
-	cp bin/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/kmod-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/kmod-amneziawg_$(POSTFIX).ipk ; \
+	mkdir -p $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/all ; \
+	mkdir -p $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH) ; \
+	mkdir -p $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages ; \
+	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/amneziawg-tools_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH)/ ; \
+	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/luci-proto-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/all/ ; \
+	cp bin/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/kmod-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/ ; \
 	}
 
 .PHONY: check-release
