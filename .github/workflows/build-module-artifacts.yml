@@ -85,6 +85,7 @@ jobs:
           cd build
           cmake ..
           make -j
+          echo "$(pwd)" >> $GITHUB_PATH
 
       - name: restore cached tools and kernel
         id: cache-tools-kernel-restore
@@ -120,10 +121,11 @@ jobs:
         id: create-feed
         run: |
           set -x
+          env
           cd amneziawg-openwrt
-          ../usign/build/usign -G -s test.sec -p test.pub
-          USIGN=../usign/build/usign FEED_SEC_KEY=$(pwd)/test.sec make create-feed
-          USIGN=../usign/build/usign FEED_PUB_KEY=$(pwd)/test.pub make verify-feed
+          usign -G -s test.sec -p test.pub
+          FEED_SEC_KEY=$(pwd)/test.sec make create-feed
+          FEED_PUB_KEY=$(pwd)/test.pub make verify-feed
 
       - name: upload artifacts
         if: ${{ always() }}
