@@ -49,6 +49,7 @@ USIGN ?= $(error usign not found)
 
 FEED_PATH    ?= $(TOPDIR)/.feed
 FEED_SEC_KEY ?= $(error FEED_SEC_KEY unset)
+FEED_PUB_KEY ?= $(error FEED_PUB_KEY unset)
 
 help: ## Show help message (list targets)
 	@awk 'BEGIN {FS = ":.*##"; printf "\nTargets:\n"} /^[$$()% 0-9a-zA-Z_-]+:.*?##/ {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}' $(SELF)
@@ -271,6 +272,20 @@ create-feed: | $(FEED_PATH) ## Create package feed
 	set -ex ; \
 	target_path=$(FEED_PATH)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH)/amneziawg ; \
 	mkdir -p $${target_path} ; \
-	cp $(AMNEZIAWG_DSTDIR)/*.ipk $${target_path}/ ; \
+	for pkg in $$(find $(AMNEZIAWG_DSTDIR)/ -type f -name "*.ipk"); do \
+		cp $${pkg} $${target_path}/ ; \
+	done ; \
 	( cd $${target_path} && $(TOPDIR)/scripts/ipkg-make-index.sh . >Packages && $(USIGN) -S -m Packages -s $(FEED_SEC_KEY) -x Packages.sig && gzip -fk Packages ) ; \
+	}
+
+.PHONY: verify-feed
+verify-feed: | $(FEED_PATH) ## Verify package feed
+	@{ \
+	set -ex ; \
+	target_path=$(FEED_PATH)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH)/amneziawg ; \
+	cat $${target_path}/Packages ; \
+	find $${target_path}/ -type f | sort ; \
+	$(USIGN) -V -m $${target_path}/Packages -p $(FEED_PUB_KEY) ; \
+	( cd $${target_path} && gunzip -fk Packages.gz ) ; \
+	$(USIGN) -V -m $${target_path}/Packages -p $(FEED_PUB_KEY) ; \
 	}
