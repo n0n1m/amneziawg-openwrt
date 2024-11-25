@@ -121,7 +121,6 @@ jobs:
         id: create-feed
         run: |
           set -x
-          env
           cd amneziawg-openwrt
           usign -G -s test.sec -p test.pub
           FEED_SEC_KEY=$(pwd)/test.sec make create-feed
