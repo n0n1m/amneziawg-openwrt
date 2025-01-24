@@ -12,7 +12,6 @@ OPENWRT_RELEASE   ?= 23.05.3
 OPENWRT_ARCH      ?= mips_24kc
 OPENWRT_TARGET    ?= ath79
 OPENWRT_SUBTARGET ?= generic
-#OPENWRT_VERMAGIC  ?= 34a8cffa541c94af8232fe9af7a1f5ba
 OPENWRT_VERMAGIC  ?= auto
 
 GITHUB_SHA        ?= $(shell git rev-parse --short HEAD)
