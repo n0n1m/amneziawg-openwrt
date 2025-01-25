@@ -103,11 +103,17 @@ Do not forget to set your own build details. Once make invocation is complete, p
 
 ## Creating tagged releases
 
-TBA
+In order to create new release, a SEMVER tag in a form of `vX.Y.Z` must be created and pushed to the repository.
+Corresponding [release workflow](.github/workflows/create-release.yml) will be automatically triggered.
 
 ## Creating opkg feed
 
-TBA
+The following Makefile targets are available to operate with OpenWrt [package feeds](https://openwrt.org/docs/guide-developer/feeds):
+ - `make create-feed`: create new feed from previously built artifacts,
+ - `make verify-feed`: verify feed metadata and signatures.
+
+Every tagged release should produce archive(s) with opkg feed for each unique combination of `OPENWRT_RELEASE`, `OPENWRT_ARCH`, `OPENWRT_TARGET`, and `OPENWRT_SUBTARGET`.
+Such archives can be used directly to extract `.ipk` packages for manual installation on target platforms, or be combined into a single feed which can be hosted and accessed externally (TODO: add an example of how to configure `/etc/opkg/customfeeds.conf`).
 
 ## Miscellaneous
 

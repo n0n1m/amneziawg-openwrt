@@ -17,7 +17,7 @@ OPENWRT_VERMAGIC  ?= auto
 GITHUB_SHA        ?= $(shell git rev-parse --short HEAD)
 VERSION_STR       ?= $(shell git describe --tags --long --dirty)
 POSTFIX           := $(VERSION_STR)_v$(OPENWRT_RELEASE)_$(OPENWRT_ARCH)_$(OPENWRT_TARGET)_$(OPENWRT_SUBTARGET)
-POSTFIX_RELEASE   := $(GITHUB_REF_NAME)_v$(OPENWRT_RELEASE)_$(OPENWRT_ARCH)_$(OPENWRT_TARGET)_$(OPENWRT_SUBTARGET)
+FEED_NAME         := amneziawg-opkg-feed-$(GITHUB_REF_NAME)-openwrt-$(OPENWRT_RELEASE)-$(OPENWRT_ARCH)-$(OPENWRT_TARGET)-$(OPENWRT_SUBTARGET)
 
 WORKFLOW_REF      ?= $(shell git rev-parse --abbrev-ref HEAD)
 
@@ -64,6 +64,7 @@ SHOW_ENV_VARS = \
 	GITHUB_SHA \
 	VERSION_STR \
 	POSTFIX \
+	FEED_NAME \
 	GITHUB_REF_TYPE \
 	GITHUB_REF_NAME \
 	WORKFLOW_REF \
@@ -257,9 +258,9 @@ prepare-release: check-release ## Save amneziawg-openwrt artifacts from tagged r
 	set -ex ; \
 	cd $(OPENWRT_SRCDIR) ; \
 	mkdir -p $(AMNEZIAWG_DSTDIR) ; \
-	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/amneziawg-tools_*.ipk $(AMNEZIAWG_DSTDIR)/amneziawg-tools_$(POSTFIX_RELEASE).ipk ; \
-	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/luci-proto-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/luci-proto-amneziawg_$(POSTFIX_RELEASE).ipk ; \
-	cp bin/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/kmod-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/kmod-amneziawg_$(POSTFIX_RELEASE).ipk ; \
+	FEED_PATH="$(AMNEZIAWG_DSTDIR)/$(FEED_NAME)" $(MAKE) -f $(SELF) create-feed ; \
+	FEED_PATH="$(AMNEZIAWG_DSTDIR)/$(FEED_NAME)" $(MAKE) -f $(SELF) verify-feed ; \
+	tar -C $(AMNEZIAWG_DSTDIR)/$(FEED_NAME) -czvf $(AMNEZIAWG_DSTDIR)/$(FEED_NAME).tar.gz $(OPENWRT_RELEASE)/ ; \
 	}
 
 $(FEED_PATH):
@@ -268,7 +269,7 @@ $(FEED_PATH):
 .PHONY: create-feed
 create-feed: | $(FEED_PATH) ## Create package feed
 	@{ \
-	set -ex ; \
+	set -eux ; \
 	target_path=$(FEED_PATH)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH)/amneziawg ; \
 	mkdir -p $${target_path} ; \
 	for pkg in $$(find $(AMNEZIAWG_DSTDIR)/ -type f -name "*.ipk"); do \
@@ -280,7 +281,7 @@ create-feed: | $(FEED_PATH) ## Create package feed
 .PHONY: verify-feed
 verify-feed: | $(FEED_PATH) ## Verify package feed
 	@{ \
-	set -ex ; \
+	set -eux ; \
 	target_path=$(FEED_PATH)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH)/amneziawg ; \
 	cat $${target_path}/Packages ; \
 	find $${target_path}/ -type f | sort ; \

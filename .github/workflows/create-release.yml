@@ -1,6 +1,9 @@
 name: create release
 
 on:
+  push:
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       openwrt_version:
@@ -72,6 +75,24 @@ jobs:
           ref: v${{ matrix.build_env.tag }}
           fetch-depth: 0
 
+      - name: checkout usign
+        uses: actions/checkout@v4
+        with:
+          path: usign
+          repository: openwrt/usign
+          fetch-depth: 0
+
+      - name: build usign
+        id: build-usign
+        run: |
+          set -x
+          cd usign
+          mkdir build
+          cd build
+          cmake ..
+          make -j
+          echo "$(pwd)" >> $GITHUB_PATH
+
       - name: restore cached tools and kernel
         id: cache-tools-kernel-restore
         uses: actions/cache/restore@v4
@@ -99,9 +120,19 @@ jobs:
           cd amneziawg-openwrt
           make show-env
           time -p make build-amneziawg
-          make prepare-release
+          cat << EOF >release.sec
+          ${{ secrets.RELEASE_FEED_SEC_KEY }}
+          EOF
+          cat << EOF >release.pub
+          ${{ secrets.RELEASE_FEED_PUB_KEY }}
+          EOF
+          make prepare-artifacts
+          FEED_SEC_KEY=$(pwd)/release.sec FEED_PUB_KEY=$(pwd)/release.pub make prepare-release
+          cp release.pub ../awgrelease/amneziawg-public.key
 
       - name: release
         uses: softprops/action-gh-release@v2
         with:
-          files: awgrelease/*.ipk
+          files: |
+            awgrelease/*.tar.gz
+            awgrelease/amneziawg-public.key
