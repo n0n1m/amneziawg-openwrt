@@ -17,7 +17,7 @@ OPENWRT_VERMAGIC  ?= auto
 GITHUB_SHA        ?= $(shell git rev-parse --short HEAD)
 VERSION_STR       ?= $(shell git describe --tags --long --dirty)
 POSTFIX           := $(VERSION_STR)_v$(OPENWRT_RELEASE)_$(OPENWRT_ARCH)_$(OPENWRT_TARGET)_$(OPENWRT_SUBTARGET)
-FEED_NAME         := opkg-feed-$(GITHUB_REF_NAME)-$(OPENWRT_RELEASE)-$(OPENWRT_ARCH)-$(OPENWRT_TARGET)-$(OPENWRT_SUBTARGET)
+FEED_NAME         := amneziawg-opkg-feed-$(GITHUB_REF_NAME)-openwrt-$(OPENWRT_RELEASE)-$(OPENWRT_ARCH)-$(OPENWRT_TARGET)-$(OPENWRT_SUBTARGET)
 
 WORKFLOW_REF      ?= $(shell git rev-parse --abbrev-ref HEAD)
 
