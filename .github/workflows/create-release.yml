@@ -72,6 +72,24 @@ jobs:
           ref: v${{ matrix.build_env.tag }}
           fetch-depth: 0
 
+      - name: checkout usign
+        uses: actions/checkout@v4
+        with:
+          path: usign
+          repository: openwrt/usign
+          fetch-depth: 0
+
+      - name: build usign
+        id: build-usign
+        run: |
+          set -x
+          cd usign
+          mkdir build
+          cd build
+          cmake ..
+          make -j
+          echo "$(pwd)" >> $GITHUB_PATH
+
       - name: restore cached tools and kernel
         id: cache-tools-kernel-restore
         uses: actions/cache/restore@v4
