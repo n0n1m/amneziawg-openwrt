@@ -123,6 +123,7 @@ jobs:
           cat << EOF >release.pub
           ${{ secrets.RELEASE_FEED_PUB_KEY }}
           EOF
+          make prepare-artifacts
           FEED_SEC_KEY=$(pwd)/release.sec FEED_PUB_KEY=$(pwd)/release.pub make prepare-release
           cp release.pub ../awgrelease/amneziawg-public.key
 
