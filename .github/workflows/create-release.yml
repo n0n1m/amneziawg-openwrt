@@ -94,14 +94,26 @@ jobs:
 
       - name: build amneziawg
         id: build-amneziawg
+        env:
+          FEED_SEC_KEY: release.sec
+          FEED_PUB_KEY: release.pub
         run: |
           set -x
           cd amneziawg-openwrt
           make show-env
           time -p make build-amneziawg
+          cat << EOF >release.sec
+          ${{ secrets.RELEASE_FEED_SEC_KEY }}
+          EOF
+          cat << EOF >release.pub
+          ${{ secrets.RELEASE_FEED_PUB_KEY }}
+          EOF
           make prepare-release
+          cp release.pub ../awgrelease/amneziawg-public.key
 
       - name: release
         uses: softprops/action-gh-release@v2
         with:
-          files: awgrelease/*.ipk
+          files: |
+            awgrelease/*.tar.gz
+            awgrelease/amneziawg-public.key
