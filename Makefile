@@ -12,7 +12,6 @@ OPENWRT_RELEASE   ?= 23.05.3
 OPENWRT_ARCH      ?= mips_24kc
 OPENWRT_TARGET    ?= ath79
 OPENWRT_SUBTARGET ?= generic
-#OPENWRT_VERMAGIC  ?= 34a8cffa541c94af8232fe9af7a1f5ba
 OPENWRT_VERMAGIC  ?= auto
 
 GITHUB_SHA        ?= $(shell git rev-parse --short HEAD)
@@ -39,6 +38,17 @@ endif
 ifeq ($(_NEED_VERMAGIC), 1)
 OPENWRT_VERMAGIC := $(shell curl -fs $(OPENWRT_MANIFEST) | grep -- "^kernel" | sed -e "s,.*\-,,")
 endif
+
+ifndef USIGN
+ifneq ($(shell usign 2>&1 | grep -i -- "usage: usign"),)
+USIGN = usign
+endif
+endif
+USIGN ?= $(error usign not found)
+
+FEED_PATH    ?= $(TOPDIR)/.feed
+FEED_SEC_KEY ?= $(error FEED_SEC_KEY unset)
+FEED_PUB_KEY ?= $(error FEED_PUB_KEY unset)
 
 help: ## Show help message (list targets)
 	@awk 'BEGIN {FS = ":.*##"; printf "\nTargets:\n"} /^[$$()% 0-9a-zA-Z_-]+:.*?##/ {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}' $(SELF)
@@ -213,10 +223,12 @@ prepare-artifacts: ## Save amneziawg-openwrt artifacts from regular builds
 	@{ \
 	set -ex ; \
 	cd $(OPENWRT_SRCDIR) ; \
-	mkdir -p $(AMNEZIAWG_DSTDIR) ; \
-	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/amneziawg-tools_*.ipk $(AMNEZIAWG_DSTDIR)/amneziawg-tools_$(POSTFIX).ipk ; \
-	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/luci-proto-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/luci-proto-amneziawg_$(POSTFIX).ipk ; \
-	cp bin/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/kmod-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/kmod-amneziawg_$(POSTFIX).ipk ; \
+	mkdir -p $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/all ; \
+	mkdir -p $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH) ; \
+	mkdir -p $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages ; \
+	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/amneziawg-tools_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH)/ ; \
+	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/luci-proto-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/all/ ; \
+	cp bin/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/kmod-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/ ; \
 	}
 
 .PHONY: check-release
@@ -248,4 +260,31 @@ prepare-release: check-release ## Save amneziawg-openwrt artifacts from tagged r
 	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/amneziawg-tools_*.ipk $(AMNEZIAWG_DSTDIR)/amneziawg-tools_$(POSTFIX_RELEASE).ipk ; \
 	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/luci-proto-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/luci-proto-amneziawg_$(POSTFIX_RELEASE).ipk ; \
 	cp bin/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/kmod-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/kmod-amneziawg_$(POSTFIX_RELEASE).ipk ; \
+	}
+
+$(FEED_PATH):
+	mkdir -p $@
+
+.PHONY: create-feed
+create-feed: | $(FEED_PATH) ## Create package feed
+	@{ \
+	set -ex ; \
+	target_path=$(FEED_PATH)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH)/amneziawg ; \
+	mkdir -p $${target_path} ; \
+	for pkg in $$(find $(AMNEZIAWG_DSTDIR)/ -type f -name "*.ipk"); do \
+		cp $${pkg} $${target_path}/ ; \
+	done ; \
+	( cd $${target_path} && $(TOPDIR)/scripts/ipkg-make-index.sh . >Packages && $(USIGN) -S -m Packages -s $(FEED_SEC_KEY) -x Packages.sig && gzip -fk Packages ) ; \
+	}
+
+.PHONY: verify-feed
+verify-feed: | $(FEED_PATH) ## Verify package feed
+	@{ \
+	set -ex ; \
+	target_path=$(FEED_PATH)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH)/amneziawg ; \
+	cat $${target_path}/Packages ; \
+	find $${target_path}/ -type f | sort ; \
+	$(USIGN) -V -m $${target_path}/Packages -p $(FEED_PUB_KEY) ; \
+	( cd $${target_path} && gunzip -fk Packages.gz ) ; \
+	$(USIGN) -V -m $${target_path}/Packages -p $(FEED_PUB_KEY) ; \
 	}

@@ -1,2 +1,5 @@
+.feed/
 .idea/
 .vscode/
+.envrc
+attic/

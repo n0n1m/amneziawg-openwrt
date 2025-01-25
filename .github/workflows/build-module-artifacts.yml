@@ -3,6 +3,9 @@ name: build module artifacts
 on:
   schedule:
     - cron: '30 3 * * 2,6'
+  pull_request:
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       openwrt_version:
@@ -66,6 +69,24 @@ jobs:
           ref: v${{ matrix.build_env.tag }}
           fetch-depth: 0
 
+      - name: checkout usign
+        uses: actions/checkout@v4
+        with:
+          path: usign
+          repository: openwrt/usign
+          fetch-depth: 0
+
+      - name: build usign
+        id: build-usign
+        run: |
+          set -x
+          cd usign
+          mkdir build
+          cd build
+          cmake ..
+          make -j
+          echo "$(pwd)" >> $GITHUB_PATH
+
       - name: restore cached tools and kernel
         id: cache-tools-kernel-restore
         uses: actions/cache/restore@v4
@@ -96,7 +117,17 @@ jobs:
           time -p make build-amneziawg
           make prepare-artifacts
 
+      - name: create feed
+        id: create-feed
+        run: |
+          set -x
+          cd amneziawg-openwrt
+          usign -G -s test.sec -p test.pub
+          FEED_SEC_KEY=$(pwd)/test.sec make create-feed
+          FEED_PUB_KEY=$(pwd)/test.pub make verify-feed
+
       - name: upload artifacts
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: amneziawg-${{ steps.build-amneziawg.outputs.version_str }}_v${{ matrix.build_env.tag }}_${{ matrix.build_env.pkgarch}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}
