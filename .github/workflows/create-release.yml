@@ -112,9 +112,6 @@ jobs:
 
       - name: build amneziawg
         id: build-amneziawg
-        env:
-          FEED_SEC_KEY: release.sec
-          FEED_PUB_KEY: release.pub
         run: |
           set -x
           cd amneziawg-openwrt
@@ -126,7 +123,7 @@ jobs:
           cat << EOF >release.pub
           ${{ secrets.RELEASE_FEED_PUB_KEY }}
           EOF
-          make prepare-release
+          FEED_SEC_KEY=$(pwd)/release.sec FEED_PUB_KEY=$(pwd)/release.pub make prepare-release
           cp release.pub ../awgrelease/amneziawg-public.key
 
       - name: release
