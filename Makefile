@@ -95,6 +95,16 @@ export-var-%:
 
 export-env: $(addprefix export-var-, $(SHOW_ENV_VARS)) ## Export environment
 
+.venv:
+	python3 -m venv $(TOPDIR)/.venv
+	$(TOPDIR)/.venv/bin/python3 -m pip install -r $(TOPDIR)/requirements.txt
+
+venv: .venv ## Create virtualenv
+
+.PHONY: generate-target-matrix
+generate-target-matrix: .venv ## Generate target matrix of build environments for GitHub CI
+	@$(TOPDIR)/.venv/bin/python3 $(TOPDIR)/scripts/generate_target_matrix.py $(OPENWRT_RELEASE)
+
 .PHONY: github-build-cache
 github-build-cache: ## Run GitHub workflow to create OpenWrt toolchain and kernel cache (use WORKFLOW_REF to specify branch/tag)
 	@{ \
