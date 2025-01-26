@@ -184,7 +184,7 @@ async def main():
                     }
                 )
 
-        print(f"::set-output name=build-matrix::{json.dumps(job_config)}")
+        print(json.dumps(job_config, separators=(',', ':')))
     except Exception as exc:
         print(exc, file=sys.stderr)
         return 1

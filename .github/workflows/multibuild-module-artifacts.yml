@@ -14,7 +14,7 @@ jobs:
   generate-target-matrix:
     runs-on: ubuntu-22.04
     outputs:
-      build-matrix: ${{ steps.generate-target-matrix.outputs.build-matrix }}
+      build-matrix: ${{ steps.generate-target-matrix.outputs.BUILD_MATRIX }}
     env:
       OPENWRT_RELEASE: ${{ inputs.openwrt_version || vars.DEFAULT_OPENWRT_VERSION }}
     steps:
@@ -32,7 +32,7 @@ jobs:
       - name: generate target matrix
         id: generate-target-matrix
         run: |
-          make generate-target-matrix
+          make generate-target-matrix >> $GITHUB_OUTPUT
 
   build:
     name: "v${{ matrix.build_env.tag }} - ${{ matrix.build_env.pkgarch }} :: ${{ matrix.build_env.target }}/${{ matrix.build_env.subtarget }} amneziawg build"
