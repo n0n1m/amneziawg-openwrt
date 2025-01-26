@@ -130,5 +130,5 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: amneziawg-${{ steps.build-amneziawg.outputs.version_str }}_v${{ matrix.build_env.tag }}_${{ matrix.build_env.pkgarch}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}
+          name: amneziawg-${{ steps.build-amneziawg.outputs.version_str }}-openwrt-${{ matrix.build_env.tag }}-${{ matrix.build_env.pkgarch}}-${{ matrix.build_env.target}}-${{ matrix.build_env.subtarget}}
           path: awgrelease/*
