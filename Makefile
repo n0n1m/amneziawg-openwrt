@@ -234,12 +234,10 @@ prepare-artifacts: ## Save amneziawg-openwrt artifacts from regular builds
 	@{ \
 	set -ex ; \
 	cd $(OPENWRT_SRCDIR) ; \
-	mkdir -p $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/all ; \
-	mkdir -p $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH) ; \
-	mkdir -p $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages ; \
-	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/amneziawg-tools_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH)/ ; \
-	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/luci-proto-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/all/ ; \
-	cp bin/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/kmod-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/ ; \
+	mkdir -p $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET) ; \
+	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/amneziawg-tools_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/ ; \
+	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/luci-proto-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/ ; \
+	cp bin/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/kmod-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/ ; \
 	}
 
 .PHONY: check-release
@@ -280,7 +278,7 @@ $(FEED_PATH):
 create-feed: | $(FEED_PATH) ## Create package feed
 	@{ \
 	set -eux ; \
-	target_path=$(FEED_PATH)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH)/amneziawg ; \
+	target_path=$(FEED_PATH)/$(OPENWRT_RELEASE)/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/ ; \
 	mkdir -p $${target_path} ; \
 	for pkg in $$(find $(AMNEZIAWG_DSTDIR)/ -type f -name "*.ipk"); do \
 		cp $${pkg} $${target_path}/ ; \
@@ -292,7 +290,7 @@ create-feed: | $(FEED_PATH) ## Create package feed
 verify-feed: | $(FEED_PATH) ## Verify package feed
 	@{ \
 	set -eux ; \
-	target_path=$(FEED_PATH)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH)/amneziawg ; \
+	target_path=$(FEED_PATH)/$(OPENWRT_RELEASE)/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/ ; \
 	cat $${target_path}/Packages ; \
 	find $${target_path}/ -type f | sort ; \
 	$(USIGN) -V -m $${target_path}/Packages -p $(FEED_PUB_KEY) ; \
