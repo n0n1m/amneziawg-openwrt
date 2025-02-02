@@ -53,9 +53,7 @@ class OpenWrtBuildInfoFetcher:
         ) as response:
             response.raise_for_status()
             if response.status != 200:
-                print(
-                    f"Error fetching HTML for {url}: {response.status}", file=sys.stderr
-                )
+                logger.error("error fetching %s: %d", url, response.status)
                 raise Exception(f"Error fetching {url}")
             return await response.text()
 
@@ -150,7 +148,9 @@ async def main():
         description="Generate build matrix for amneziawg-openwrt GitHub CI"
     )
     parser.add_argument(
-        "version", help="OpenWrt version (use SNAPSHOT for building against snapshots)"
+        "version",
+        help="OpenWrt version (use SNAPSHOT for building against snapshots)",
+        nargs="+",
     )
     parser.add_argument(
         "--verbose", action="store_true", default=False, help="enable logging"
@@ -166,27 +166,35 @@ async def main():
     logger.info("started")
     job_config = []
 
+    versions = set()
+    for version in args.version:
+        if version.lower() in versions:
+            logger.warning("duplicate version ignored: %s", version)
+            continue
+        versions.add(version.lower())
+
     try:
-        async with OpenWrtBuildInfoFetcher(version=args.version) as of:
-            await of.get_targets()
-            await of.get_subtargets()
-            await of.get_details()
+        for version in versions:
+            async with OpenWrtBuildInfoFetcher(version=version) as of:
+                await of.get_targets()
+                await of.get_subtargets()
+                await of.get_details()
 
-        for target, subtargets in of.targets.items():
-            for subtarget in subtargets:
-                job_config.append(
-                    {
-                        "tag": args.version,
-                        "target": target,
-                        "subtarget": subtarget,
-                        "vermagic": of.targets[target][subtarget]["vermagic"],
-                        "pkgarch": of.targets[target][subtarget]["pkgarch"],
-                    }
-                )
+            for target, subtargets in of.targets.items():
+                for subtarget in subtargets:
+                    job_config.append(
+                        {
+                            "tag": version,
+                            "target": target,
+                            "subtarget": subtarget,
+                            "vermagic": of.targets[target][subtarget]["vermagic"],
+                            "pkgarch": of.targets[target][subtarget]["pkgarch"],
+                        }
+                    )
 
-        print(json.dumps(job_config, separators=(',', ':')))
+        print(json.dumps(job_config, separators=(",", ":")))
     except Exception as exc:
-        print(exc, file=sys.stderr)
+        logger.error("%s", str(exc))
         return 1
 
     logger.info("stopped")
