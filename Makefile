@@ -14,6 +14,9 @@ OPENWRT_TARGET    ?= ath79
 OPENWRT_SUBTARGET ?= generic
 OPENWRT_VERMAGIC  ?= auto
 
+# for generate-target-matrix
+OPENWRT_RELEASES  ?= $(OPENWRT_RELEASE)
+
 GITHUB_SHA        ?= $(shell git rev-parse --short HEAD)
 VERSION_STR       ?= $(shell git describe --tags --long --dirty)
 POSTFIX           := $(VERSION_STR)_v$(OPENWRT_RELEASE)_$(OPENWRT_ARCH)_$(OPENWRT_TARGET)_$(OPENWRT_SUBTARGET)
@@ -103,7 +106,7 @@ venv: .venv ## Create virtualenv
 
 .PHONY: generate-target-matrix
 generate-target-matrix: .venv ## Generate target matrix of build environments for GitHub CI
-	@printf "BUILD_MATRIX=%s" "$$($(TOPDIR)/.venv/bin/python3 $(TOPDIR)/scripts/generate_target_matrix.py $(OPENWRT_RELEASE))"
+	@printf "BUILD_MATRIX=%s" "$$($(TOPDIR)/.venv/bin/python3 $(TOPDIR)/scripts/generate_target_matrix.py $(OPENWRT_RELEASES))"
 
 .PHONY: github-build-cache
 github-build-cache: ## Run GitHub workflow to create OpenWrt toolchain and kernel cache (use WORKFLOW_REF to specify branch/tag)

@@ -4,11 +4,11 @@ on:
   push:
   workflow_dispatch:
     inputs:
-      openwrt_version:
-        description: "OpenWrt version"
+      openwrt_versions:
+        description: "OpenWrt version(s)"
         type: string
         required: true
-        default: "23.05.3"
+        default: "23.05.5 23.05.3"
 
 jobs:
   generate-target-matrix:
@@ -16,7 +16,7 @@ jobs:
     outputs:
       build-matrix: ${{ steps.generate-target-matrix.outputs.BUILD_MATRIX }}
     env:
-      OPENWRT_RELEASE: ${{ inputs.openwrt_version || vars.DEFAULT_OPENWRT_VERSION }}
+      OPENWRT_RELEASES: ${{ inputs.openwrt_versions || vars.DEFAULT_OPENWRT_VERSIONS }}
     steps:
       - name: checkout amneziawg-openwrt
         uses: actions/checkout@v4
