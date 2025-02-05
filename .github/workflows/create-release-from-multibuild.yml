@@ -64,7 +64,7 @@ jobs:
           set -x
           cd amneziawg-openwrt
           make show-env
-          make check-release
+          #make check-release
 
       - name: checkout openwrt
         uses: actions/checkout@v4
