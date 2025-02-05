@@ -14,6 +14,9 @@ OPENWRT_TARGET    ?= ath79
 OPENWRT_SUBTARGET ?= generic
 OPENWRT_VERMAGIC  ?= auto
 
+# for generate-target-matrix
+OPENWRT_RELEASES  ?= $(OPENWRT_RELEASE)
+
 GITHUB_SHA        ?= $(shell git rev-parse --short HEAD)
 VERSION_STR       ?= $(shell git describe --tags --long --dirty)
 POSTFIX           := $(VERSION_STR)_v$(OPENWRT_RELEASE)_$(OPENWRT_ARCH)_$(OPENWRT_TARGET)_$(OPENWRT_SUBTARGET)
@@ -94,6 +97,16 @@ export-var-%:
 	}
 
 export-env: $(addprefix export-var-, $(SHOW_ENV_VARS)) ## Export environment
+
+.venv:
+	python3 -m venv $(TOPDIR)/.venv
+	$(TOPDIR)/.venv/bin/python3 -m pip install -r $(TOPDIR)/requirements.txt
+
+venv: .venv ## Create virtualenv
+
+.PHONY: generate-target-matrix
+generate-target-matrix: .venv ## Generate target matrix of build environments for GitHub CI
+	@printf "BUILD_MATRIX=%s" "$$($(TOPDIR)/.venv/bin/python3 $(TOPDIR)/scripts/generate_target_matrix.py $(OPENWRT_RELEASES))"
 
 .PHONY: github-build-cache
 github-build-cache: ## Run GitHub workflow to create OpenWrt toolchain and kernel cache (use WORKFLOW_REF to specify branch/tag)
@@ -224,12 +237,10 @@ prepare-artifacts: ## Save amneziawg-openwrt artifacts from regular builds
 	@{ \
 	set -ex ; \
 	cd $(OPENWRT_SRCDIR) ; \
-	mkdir -p $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/all ; \
-	mkdir -p $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH) ; \
-	mkdir -p $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages ; \
-	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/amneziawg-tools_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH)/ ; \
-	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/luci-proto-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/packages/all/ ; \
-	cp bin/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/kmod-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/ ; \
+	mkdir -p $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET) ; \
+	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/amneziawg-tools_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/ ; \
+	cp bin/packages/$(OPENWRT_ARCH)/awgopenwrt/luci-proto-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/ ; \
+	cp bin/targets/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/packages/kmod-amneziawg_*.ipk $(AMNEZIAWG_DSTDIR)/$(OPENWRT_RELEASE)/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/ ; \
 	}
 
 .PHONY: check-release
@@ -270,7 +281,7 @@ $(FEED_PATH):
 create-feed: | $(FEED_PATH) ## Create package feed
 	@{ \
 	set -eux ; \
-	target_path=$(FEED_PATH)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH)/amneziawg ; \
+	target_path=$(FEED_PATH)/$(OPENWRT_RELEASE)/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/ ; \
 	mkdir -p $${target_path} ; \
 	for pkg in $$(find $(AMNEZIAWG_DSTDIR)/ -type f -name "*.ipk"); do \
 		cp $${pkg} $${target_path}/ ; \
@@ -282,7 +293,7 @@ create-feed: | $(FEED_PATH) ## Create package feed
 verify-feed: | $(FEED_PATH) ## Verify package feed
 	@{ \
 	set -eux ; \
-	target_path=$(FEED_PATH)/$(OPENWRT_RELEASE)/packages/$(OPENWRT_ARCH)/amneziawg ; \
+	target_path=$(FEED_PATH)/$(OPENWRT_RELEASE)/$(OPENWRT_TARGET)/$(OPENWRT_SUBTARGET)/ ; \
 	cat $${target_path}/Packages ; \
 	find $${target_path}/ -type f | sort ; \
 	$(USIGN) -V -m $${target_path}/Packages -p $(FEED_PUB_KEY) ; \
