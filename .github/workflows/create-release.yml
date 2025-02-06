@@ -1,9 +1,11 @@
 name: create release
 
+#on:
+#  push:
+#    tags:
+#      - "v*.*.*"
+
 on:
-  push:
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
     inputs:
       openwrt_version:

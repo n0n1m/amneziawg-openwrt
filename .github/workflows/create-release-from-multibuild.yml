@@ -2,8 +2,8 @@ name: create release from multibuild
 
 on:
   push:
-#    tags:
-#      - "v*.*.*"
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       openwrt_versions:
@@ -64,7 +64,7 @@ jobs:
           set -x
           cd amneziawg-openwrt
           make show-env
-          #make check-release
+          make check-release
 
       - name: checkout openwrt
         uses: actions/checkout@v4
@@ -150,9 +150,9 @@ jobs:
       - name: show artifacts
         run: ls -Rl awgrelease/
 
-#      - name: create release
-#        uses: softprops/action-gh-release@v2
-#        with:
-#          files: |
-#            awgrelease/*.tar.gz
-#            awgrelease/amneziawg-public.key
+      - name: create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            awgrelease/*.tar.gz
+            awgrelease/amneziawg-public.key
