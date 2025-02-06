@@ -43,6 +43,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: generate-target-matrix
     strategy:
+      fail-fast: false
       matrix:
         build_env: ${{ fromJson(needs.generate-target-matrix.outputs.build-matrix) }}
 
