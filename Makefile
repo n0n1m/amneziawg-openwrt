@@ -264,7 +264,8 @@ check-release: ## Verify that everything is in place for tagged release
 	}
 
 .PHONY: prepare-release
-prepare-release: check-release ## Save amneziawg-openwrt artifacts from tagged release
+#prepare-release: check-release ## Save amneziawg-openwrt artifacts from tagged release
+prepare-release:
 	@{ \
 	set -ex ; \
 	cd $(OPENWRT_SRCDIR) ; \
