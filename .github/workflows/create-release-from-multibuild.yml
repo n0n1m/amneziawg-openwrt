@@ -1,3 +1,5 @@
+# default workflow for creating release from multi-target builds
+
 name: create release from multibuild
 
 on:

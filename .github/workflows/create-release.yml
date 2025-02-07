@@ -1,3 +1,6 @@
+# obsoleted workflow to create release from single target build;
+# can still be used to update existing releases with new targets
+
 name: create release
 
 #on:
