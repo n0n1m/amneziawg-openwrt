@@ -1,9 +1,14 @@
+# obsoleted workflow to create release from single target build;
+# can still be used to update existing releases with new targets
+
 name: create release
 
+#on:
+#  push:
+#    tags:
+#      - "v*.*.*"
+
 on:
-  push:
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
     inputs:
       openwrt_version:
